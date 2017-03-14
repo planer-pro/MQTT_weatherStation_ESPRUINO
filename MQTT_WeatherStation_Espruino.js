@@ -27,6 +27,9 @@ var id;
 var tempOld;
 var pressOld;
 var humOld;
+var altOld;
+
+var seaLevel = 1013;//default sea level pressure
 
 mqtt.on('connected', function () {
     id = setInterval(function () {
@@ -35,7 +38,7 @@ mqtt.on('connected', function () {
         var temp_act = (bme.calibration_T(bme.temp_raw) / 100.0).toFixed(2);
         var hum_act = (bme.calibration_H(bme.hum_raw) / 1024.0).toFixed(0);
         var press_act = (bme.calibration_P(bme.pres_raw) / 100.0).toFixed(2);
-        //var alt_act = press_act * 0.75;//wrong calculate
+        var alt_act = (44330.0 * (1.0 - Math.pow(press_act / seaLevel, 0.1903))).toFixed(2);
 
         if (temp_act != tempOld) {
             mqtt.publish("outdoor/sensors/bme280_temp", temp_act);
@@ -48,6 +51,10 @@ mqtt.on('connected', function () {
         if (press_act != pressOld) {
             mqtt.publish("outdoor/sensors/bme280_press", press_act);
             pressOld = press_act;
+        }
+        if (alt_act != altOld) {
+            mqtt.publish("outdoor/sensors/bme280_alt", alt_act);
+            altOld = alt_act;
         }
 
         digitalPulse(2, 0, [60, 60, 60]);//led indicator MQTT transmit
