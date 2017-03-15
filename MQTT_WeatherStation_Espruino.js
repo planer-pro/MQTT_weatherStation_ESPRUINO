@@ -3,14 +3,14 @@ I2C1.setup({scl: 5, sda: 4});//bme280 pins
 var bme;
 var wifi = require("Wifi");
 
-var server = "m10.cloudmqtt.com";
+var server = "serv";
 var options = {
     client_id: "bme280_sens",
     keep_alive: 60,
-    port: 17012,
+    port: 12345,
     clean_session: true,
-    username: "nyfibdqw",
-    password: "UB9U4T-px4Zk",
+    username: "user",
+    password: "pass",
     protocol_name: "MQTT",
     protocol_level: 4
 };
@@ -25,9 +25,12 @@ wifi.on('connected', function (details) {
 var id;
 
 var tempOld;
-var pressOld;
 var humOld;
-var altOld;
+var pressOld;
+
+var tempCalibr = 0.0;
+var humCalibr = 0.0;
+var pressCalibr = 0.0;
 
 var seaLevel = 1013;//default sea level pressure
 
@@ -35,9 +38,9 @@ mqtt.on('connected', function () {
     id = setInterval(function () {
         bme.readRawData();
 
-        var temp_act = (bme.calibration_T(bme.temp_raw) / 100.0).toFixed(2);
-        var hum_act = (bme.calibration_H(bme.hum_raw) / 1024.0).toFixed(0);
-        var press_act = (bme.calibration_P(bme.pres_raw) / 100.0).toFixed(2);
+        var temp_act = ((bme.calibration_T(bme.temp_raw) / 100.0) + tempCalibr).toFixed(2);
+        var hum_act = ((bme.calibration_H(bme.hum_raw) / 1024.0) + humCalibr).toFixed(0);
+        var press_act = ((bme.calibration_P(bme.pres_raw) / 100.0) + pressCalibr).toFixed(2);
         var alt_act = (44330.0 * (1.0 - Math.pow(press_act / seaLevel, 0.1903))).toFixed(2);
 
         if (temp_act != tempOld) {
@@ -50,11 +53,8 @@ mqtt.on('connected', function () {
         }
         if (press_act != pressOld) {
             mqtt.publish("outdoor/sensors/bme280_press", press_act);
-            pressOld = press_act;
-        }
-        if (alt_act != altOld) {
             mqtt.publish("outdoor/sensors/bme280_alt", alt_act);
-            altOld = alt_act;
+            pressOld = press_act;
         }
 
         digitalPulse(2, 0, [60, 60, 60]);//led indicator MQTT transmit
