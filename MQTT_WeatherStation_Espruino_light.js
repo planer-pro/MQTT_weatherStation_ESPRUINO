@@ -5,17 +5,18 @@ I2C1.setup({ scl: 5, sda: 4 });//bme280 pins
 var bme;
 var server = "server";
 var options = {
-    client_id: "bme280_sens",
-    keep_alive: 60,
+    //client_id: "bme280_sens",
+    //keep_alive: 60,
     port: port,
-    clean_session: true,
+    //clean_session: true,
     username: "user",
-    password: "pass",
-    protocol_name: "MQTT",
-    protocol_level: 4
+    password: "pass"
+    //protocol_name: "MQTT",
+    //protocol_level: 4
 };
 
-var mqtt = require("MQTT").create(server, options);
+//var mqtt = require("MQTT").create(server, options);
+var mqtt = require("https://github.com/olliephillips/tinyMQTT/blob/master/tinyMQTT.min.js").create(server, options);
 
 wifi.on('connected', function (details) {
     bme = require("BME280").connect(I2C1);
@@ -71,7 +72,7 @@ mqtt.on('connected', function () {
     }, 4000);
 });
 
-mqtt.on('publish', function (pub) {
+mqtt.on('message', function (pub) {
     if (pub.topic == "outdoor/sensors/bme280_getState" && pub.message == "1") {
         mqtt.publish("outdoor/sensors/bme280_temp", temp_act);
         mqtt.publish("outdoor/sensors/bme280_hum", hum_act);
